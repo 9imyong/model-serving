@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-ocr
+  namespace: model-serving
+  labels:
+    app: worker-ocr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-ocr
+  template:
+    metadata:
+      labels:
+        app: worker-ocr
+    spec:
+      containers:
+        - name: worker-ocr
+          image: model-serving-worker-ocr:latest
+          envFrom:
+            - configMapRef:
+                name: model-serving-config
+            - secretRef:
+                name: model-serving-secret
+                optional: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker-ocr
+  namespace: model-serving
+spec:
+  selector:
+    app: worker-ocr
+  ports: []
+  clusterIP: None

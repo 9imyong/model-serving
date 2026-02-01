@@ -1,0 +1,42 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/api.Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+    depends_on:
+      - mysql
+      - redis
+
+  worker-ocr:
+    build:
+      context: ..
+      dockerfile: docker/worker-ocr.Dockerfile
+    environment:
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+    depends_on:
+      - mysql
+      - redis
+
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: model_serving
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  mysql_data:

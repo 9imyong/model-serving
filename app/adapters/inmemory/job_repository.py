@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import uuid
-from app.ports.job_repository import JobRepository
+from app.domain.errors import JobNotFound
+from app.ports.job_repository import JobRecord, JobRepository
 
 
 class InMemoryJobRepository(JobRepository):
@@ -15,3 +16,9 @@ class InMemoryJobRepository(JobRepository):
         job_id = str(uuid.uuid4())
         self._jobs[job_id] = input_uri
         return job_id
+
+    def get(self, job_id: str) -> JobRecord:
+        input_uri = self._jobs.get(job_id)
+        if input_uri is None:
+            raise JobNotFound()
+        return JobRecord(job_id=job_id, input_uri=input_uri)

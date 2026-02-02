@@ -15,8 +15,8 @@ dependencies = [
   "opentelemetry-instrumentation-fastapi>=0.44b0",
 ]
 
-[tool.uv]
-dev-dependencies = []
+[dependency-groups]
+dev = ["pytest", "ruff"]
 
 [tool.ruff]
 line-length = 100

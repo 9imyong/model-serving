@@ -48,6 +48,13 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
         self.generator = generator or (lambda: uuid.uuid4().hex)
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        rid = ""
-        if self.allow_external:
-            rid = request
+        rid = request.headers.get(self.header_name) or ""
+        if not rid:
+            rid = self.generator()
+        token = request_id_ctx.set(rid)
+        try:
+            response = await call_next(request)
+            response.headers[self.header_name] = rid
+            return response
+        finally:
+            request_id_ctx.reset(token)

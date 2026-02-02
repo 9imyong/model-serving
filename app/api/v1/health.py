@@ -1,8 +1,12 @@
 from fastapi import APIRouter
+from app.domain.errors import JobNotFound
 
 router = APIRouter()
 
-
-@router.get("")
+@router.get("/health")
 def health():
     return {"status": "ok"}
+
+@router.get("/boom")
+def boom():
+    raise JobNotFound()

@@ -13,7 +13,7 @@ _repo = InMemoryJobRepository()
 _create_job_uc = CreateJobUseCase(repo=_repo)
 
 
-@router.post("/jobs", response_model=CreateJobResponse, status_code=201)
+@router.post("/jobs", status_code=201, response_model=CreateJobResponse)
 def create_job(req: CreateJobRequest):
     """
     API 책임:

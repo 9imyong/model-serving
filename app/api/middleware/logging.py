@@ -11,6 +11,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from app.api.middleware.request_id import get_request_id
+from app.core.metrics import observe_http_request
 
 logger = logging.getLogger("app.api")
 
@@ -29,7 +30,13 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             return response
         finally:
-            elapsed_ms = (time.perf_counter() - start) * 1000.0
+            elapsed_s = time.perf_counter() - start
+            elapsed_ms = elapsed_s * 1000.0
+            observe_http_request(
+                request=request,
+                status_code=response.status_code if response else 500,
+                duration_seconds=elapsed_s,
+            )
             logger.info(
                 "http_request",
                 extra={

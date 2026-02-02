@@ -4,9 +4,15 @@ version = "0.1.0"
 description = "OCR model serving platform"
 readme = "README.md"
 requires-python = ">=3.11"
+
 dependencies = [
-  "fastapi>=0.115",
-  "uvicorn[standard]>=0.32",
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+  "gunicorn>=21.2",
+  "prometheus-client>=0.20",
+  "opentelemetry-api>=1.23",
+  "opentelemetry-sdk>=1.23",
+  "opentelemetry-instrumentation-fastapi>=0.44b0",
 ]
 
 [tool.uv]
@@ -19,3 +25,16 @@ target-version = "py311"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["app"]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "ruff",
+  "black",
+  "mypy",
+]
+
+obs = [
+  "opentelemetry-exporter-otlp",
+  "opentelemetry-instrumentation-logging",
+]

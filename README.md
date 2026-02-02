@@ -34,7 +34,7 @@ API, Worker, Domain 로직을 명확히 분리하고 장애 예측·대응·복�
 │   ├── application/    # Usecase (Command / Query)
 │   ├── domain/         # 핵심 규칙 / 상태
 │   ├── ports/          # 외부 의존 인터페이스
-│   ├── adapters/       # DB / Queue / Runtime 구현
+│   ├── adapters/       # DB / Kafka / Runtime 구현
 │   ├── core/           # 공통 인프라 (logging, metrics 등)
 │   └── worker/         # 비동기 처리 Worker
 │
@@ -84,17 +84,17 @@ docker compose down
 #### kind / dev 환경
 
 ```bash
-kubectl apply -k deploy/k8s/overlays/arch-simple/dev
+kubectl apply -k deploy/k8s/overlays/arch-async-standard/dev
 ```
 
 #### 실서비스 환경
 
 ```bash
-kubectl apply -k deploy/k8s/overlays/arch-ha/prod
+kubectl apply -k deploy/k8s/overlays/arch-async-batched/prod
 ```
 
 * base + overlay(kustomize) 구조
-* 코드 동일, 배포 설정만 분리
+* 코드 동일, 처리 전략과 운영 정책만 분리
 
 ---
 
@@ -102,11 +102,10 @@ kubectl apply -k deploy/k8s/overlays/arch-ha/prod
 
 Kubernetes 환경에서 다음 3가지 아키텍처를 제공한다.
 
-| 시나리오        | 설명                          |
-| ----------- | --------------------------- |
-| arch-simple | 단일 API + Worker (개발 / PoC)  |
-| arch-async  | API + Queue + Worker 비동기 처리 |
-| arch-ha     | Scale-out + HA 구성 (운영 환경)   |
+| 시나리오                    | 설명                       |
+| ----------------------- | ------------------------ |
+| **arch-async-standard** | Kafka 기반 단건 처리 비동기 구조    |
+| **arch-async-batched**  | GPU 마이크로배치 기반 처리량 최적화 구조 |
 
 자세한 내용은 `ARCHITECTURE.md` 참고.
 

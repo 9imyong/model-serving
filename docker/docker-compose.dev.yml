@@ -6,22 +6,66 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MYSQL_HOST=mysql
-      - REDIS_HOST=redis
+      # MySQL (SoT)
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: model_serving
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+
+      # Kafka (필수 비동기 트리거)
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC_OCR: ocr.jobs
+
+      # Redis (보조: rate-limit / circuit-breaker / dedupe)
+      REDIS_ENABLED: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      RATE_LIMIT_ENABLED: "true"
+      OVERLOAD_GATE_ENABLED: "true"
+      DEDUPE_ENABLED: "true"
+
     depends_on:
       - mysql
-      - redis
+      - kafka
+    # redis는 보조 컴포넌트이므로 필수 의존으로 두지 않음
 
   worker-ocr:
     build:
       context: ..
       dockerfile: docker/worker-ocr.Dockerfile
     environment:
-      - MYSQL_HOST=mysql
-      - REDIS_HOST=redis
+      # MySQL (SoT)
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: model_serving
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+
+      # Kafka (필수)
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC_OCR: ocr.jobs
+      KAFKA_CONSUMER_GROUP: worker-ocr
+
+      # GPU 제어
+      GPU_CONCURRENCY: "1"
+
+      # Batch 처리 (arch-async-batched에서만 활성)
+      BATCH_ENABLED: "false"
+      BATCH_MAX_SIZE: "16"
+      BATCH_MAX_WAIT_MS: "20"
+
+      # Redis (보조)
+      REDIS_ENABLED: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DEDUPE_ENABLED: "true"
+
     depends_on:
       - mysql
-      - redis
+      - kafka
+    # redis는 보조 컴포넌트이므로 필수 의존으로 두지 않음
 
   mysql:
     image: mysql:8
@@ -32,6 +76,35 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+
+  kafka:
+    image: apache/kafka:4.1.1
+    ports:
+      - "9092:9092"
+    environment:
+      # KRaft 기본
+      KAFKA_CFG_PROCESS_ROLES: "broker,controller"
+      KAFKA_CFG_NODE_ID: "1"
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+
+      # 리스너 설정
+      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+
+      # 단일 브로커 개발용
+      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_CFG_MIN_INSYNC_REPLICAS: "1"
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+      # 개발 편의 (PLAINTEXT 허용)
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - kafka_data:/afache/kafka
 
   redis:
     image: redis:7-alpine

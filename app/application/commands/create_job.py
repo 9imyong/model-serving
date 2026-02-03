@@ -18,14 +18,14 @@ class CreateJobUseCase:
     event_bus: EventBus
 
     async def execute(self, dto: CreateJobDTO) -> CreateJobResponse:
-        if dto.input_uri and await self.repo.exists_by_input_uri(dto.input_uri):
+        if dto.input_uri and self.repo.exists_by_input_uri(dto.input_uri):
             raise ConflictError("job already exists for this input_uri")
 
         job_id = generate_job_id()
         job = Job.create(job_id, input_uri=dto.input_uri, model_name=dto.model_name)
 
-        await self.repo.save(job)
-        await self.event_bus.publish(
+        self.repo.save(job)
+        self.event_bus.publish(
             JobCreated(job_id=job_id, payload={"input_uri": dto.input_uri, "model_name": dto.model_name}),
         )
 

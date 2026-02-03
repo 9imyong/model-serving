@@ -1,0 +1,1 @@
+# app/adapters/kafka/__init__.py

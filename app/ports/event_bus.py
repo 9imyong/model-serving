@@ -1,8 +1,9 @@
-"""Event bus port."""
+# app/ports/event_bus.py
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Protocol
+from app.domain.events import DomainEvent
 
 
 class EventBus(Protocol):
-    def publish(self, event: Any) -> None: ...
+    async def publish(self, event: DomainEvent) -> None: ...

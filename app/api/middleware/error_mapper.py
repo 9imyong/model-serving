@@ -3,12 +3,33 @@ from __future__ import annotations
 
 from fastapi import HTTPException
 
-from app.domain.errors import DomainError, InvalidStateError, NotFoundError
-from app.application.errors import UseCaseError, ConflictError
 from app.api.errors.http_exceptions import ApiError
+from app.application.errors import ConflictError, UseCaseError
+from app.domain.errors import DomainError, InvalidStateError, NotFoundError
 
 
-def map_exception(exc: Exception) -> HTTPException:
+def _unwrap_exception_group(exc: Exception) -> Exception:
+    """
+    Python 3.11+ may raise ExceptionGroup in async contexts (TaskGroup/anyio).
+    We map the most relevant inner exception.
+    """
+    if isinstance(exc, ExceptionGroup):  # type: ignore[name-defined]
+        # pick the first exception as primary cause (simple & predictable)
+        if exc.exceptions:
+            inner = exc.exceptions[0]
+            if isinstance(inner, Exception):
+                return inner
+    return exc
+
+
+async def map_exception(exc: Exception) -> HTTPException:
+    # Unwrap grouped exceptions (Python 3.11+)
+    exc = _unwrap_exception_group(exc)
+
+    # FastAPI/Starlette HTTP exceptions should pass through
+    if isinstance(exc, HTTPException):
+        return exc
+
     # ---- Domain ----
     if isinstance(exc, InvalidStateError):
         return ApiError(

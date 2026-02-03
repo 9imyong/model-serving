@@ -3,34 +3,41 @@ from fastapi import APIRouter
 
 from app.api.v1.models import CreateJobRequest, CreateJobResponse, GetJobResponse
 from app.application.commands.create_job import CreateJobUseCase
-from app.application.queries.get_job import GetJobUseCase
 from app.application.dto import CreateJobDTO
+from app.application.queries.get_job_status import GetJobStatusUseCase
+from app.adapters.inmemory.event_bus import InMemoryEventBus
 from app.adapters.inmemory.job_repository import InMemoryJobRepository
 
 router = APIRouter()
 
 # 임시 wiring (다음 단계에서 DI / container로 이동)
 _repo = InMemoryJobRepository()
-_create_job_uc = CreateJobUseCase(repo=_repo)
-_get_job_uc = GetJobUseCase(repo=_repo)
+_event_bus = InMemoryEventBus()
+_create_job_uc = CreateJobUseCase(repo=_repo, event_bus=_event_bus)
+_get_job_status_uc = GetJobStatusUseCase(repo=_repo)
 
 
 @router.post("/jobs", status_code=201, response_model=CreateJobResponse)
 def create_job(req: CreateJobRequest):
-    """
-    API 책임:
-    - 요청 검증 (Pydantic)
-    - DTO 변환
-    - Usecase 호출
-    - 응답 변환
-    """
-    dto = CreateJobDTO(input_uri=req.input_uri)
-    job_id = _create_job_uc.execute(dto)
-
-    return CreateJobResponse(job_id=job_id)
+    dto = CreateJobDTO(
+        model_name=req.model_name,
+        input_uri=req.input_uri,
+        options=req.options,
+    )
+    out = _create_job_uc.execute(dto)
+    return CreateJobResponse(
+        job_id=out.job_id,
+        status=out.status.value if hasattr(out.status, "value") else str(out.status),
+        created_at=out.created_at,
+    )
 
 
 @router.get("/jobs/{job_id}", response_model=GetJobResponse)
 def get_job(job_id: str):
-    record = _get_job_uc.execute(job_id)
-    return GetJobResponse(job_id=record.job_id, input_uri=record.input_uri)
+    out = _get_job_status_uc.execute(job_id)
+    return GetJobResponse(
+        job_id=out.job_id,
+        status=out.status.value if hasattr(out.status, "value") else str(out.status),
+        input_uri=out.input_uri,
+        created_at=out.created_at,
+    )

@@ -5,8 +5,7 @@ from app.api.errors import register_exception_handlers
 from app.api.middleware.request_id import RequestIdMiddleware
 from app.api.middleware.logging import AccessLogMiddleware
 
-from app.domain.errors import JobNotFound
-from app.api.v1 import router as v1_router  # ✅ 여기 중요
+from app.api.v1 import router as v1_router
 from app.api.v1.metrics import router as metrics_router
 
 

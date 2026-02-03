@@ -1,4 +1,4 @@
 """Repository ports."""
-from app.ports.repositories.job_repository import JobRecord, JobRepository
+from app.ports.repositories.job_repository import JobRepository
 
-__all__ = ["JobRecord", "JobRepository"]
+__all__ = ["JobRepository"]

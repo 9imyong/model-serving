@@ -25,46 +25,50 @@ services:
       RATE_LIMIT_ENABLED: "true"
       OVERLOAD_GATE_ENABLED: "true"
       DEDUPE_ENABLED: "true"
+      
+      REPO_BACKEND: mysql
+      IDEM_BACKEND: redis
+      EVENT_BUS: kafka
 
     depends_on:
       - mysql
       - kafka
     # redis는 보조 컴포넌트이므로 필수 의존으로 두지 않음
 
-  worker-ocr:
-    build:
-      context: ..
-      dockerfile: docker/worker-ocr.Dockerfile
-    environment:
-      # MySQL (SoT)
-      MYSQL_HOST: mysql
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: model_serving
-      MYSQL_USER: root
-      MYSQL_PASSWORD: root
+  # worker-ocr:
+  #   build:
+  #     context: ..
+  #     dockerfile: docker/worker-ocr.Dockerfile
+  #   environment:
+  #     # MySQL (SoT)
+  #     MYSQL_HOST: mysql
+  #     MYSQL_PORT: 3306
+  #     MYSQL_DATABASE: model_serving
+  #     MYSQL_USER: root
+  #     MYSQL_PASSWORD: root
 
-      # Kafka (필수)
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      KAFKA_TOPIC_OCR: ocr.jobs
-      KAFKA_CONSUMER_GROUP: worker-ocr
+  #     # Kafka (필수)
+  #     KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  #     KAFKA_TOPIC_OCR: ocr.jobs
+  #     KAFKA_CONSUMER_GROUP: worker-ocr
 
-      # GPU 제어
-      GPU_CONCURRENCY: "1"
+  #     # GPU 제어
+  #     GPU_CONCURRENCY: "1"
 
-      # Batch 처리 (arch-async-batched에서만 활성)
-      BATCH_ENABLED: "false"
-      BATCH_MAX_SIZE: "16"
-      BATCH_MAX_WAIT_MS: "20"
+  #     # Batch 처리 (arch-async-batched에서만 활성)
+  #     BATCH_ENABLED: "false"
+  #     BATCH_MAX_SIZE: "16"
+  #     BATCH_MAX_WAIT_MS: "20"
 
-      # Redis (보조)
-      REDIS_ENABLED: "true"
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      DEDUPE_ENABLED: "true"
+  #     # Redis (보조)
+  #     REDIS_ENABLED: "true"
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #     DEDUPE_ENABLED: "true"
 
-    depends_on:
-      - mysql
-      - kafka
+  #   depends_on:
+  #     - mysql
+  #     - kafka
     # redis는 보조 컴포넌트이므로 필수 의존으로 두지 않음
 
   mysql:
@@ -76,6 +80,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
 
   kafka:
     image: apache/kafka:4.1.1
@@ -110,6 +115,7 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-
 volumes:
   mysql_data:
+  redis_data:
+  kafka_data:

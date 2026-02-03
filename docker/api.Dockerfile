@@ -8,25 +8,21 @@
 
 # ---------- builder ----------
 FROM python:3.11-slim AS builder
-
 WORKDIR /app
 
-# (선택) 빌드에 필요한 최소 패키지
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# uv 설치
 RUN pip install --no-cache-dir uv
 
-# 의존성 파일 먼저 복사 (캐시 최적화)
 COPY pyproject.toml uv.lock ./
 
-# venv 생성 + 동기화 (프로젝트에 맞춰 groups 조정 가능)
-# --frozen: lockfile 그대로 사용
+# 핵심: uv sync가 /opt/venv에 설치하도록 강제
 RUN uv venv /opt/venv \
     && . /opt/venv/bin/activate \
-    && uv sync --frozen --no-dev
+    && uv sync --frozen --no-dev --active
+
 
 # ---------- runtime ----------
 FROM python:3.11-slim AS runtime
@@ -42,7 +38,7 @@ COPY --from=builder /opt/venv /opt/venv
 
 # 앱 소스 복사
 COPY app ./app
-COPY gunicorn.conf.py ./gunicorn.conf.py
+# COPY gunicorn.conf.py ./gunicorn.conf.py
 
 EXPOSE 8000
 
@@ -50,5 +46,5 @@ EXPOSE 8000
 # (curl이 없으면 Python으로 체크하거나, K8s probe에서 처리)
 # HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()"
 
-# Gunicorn 실행
-CMD ["gunicorn", "app.main:app", "-c", "gunicorn.conf.py"]
+# CMD ["gunicorn", "app.main:app", "-c", "app.gunicorn.conf.py"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

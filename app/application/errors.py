@@ -1,6 +1,7 @@
 # app/application/errors.py
 from __future__ import annotations
 
+
 class UseCaseError(Exception):
     """
     Application layer base error.
@@ -18,3 +19,7 @@ class UseCaseError(Exception):
 class ConflictError(UseCaseError):
     code = "CONFLICT"
     message = "conflict occurred"
+
+    def __init__(self, message: str | None = None, *, source: str | None = None):
+        super().__init__(message)
+        self.source = source  # e.g. "idem_gate" | "repo_exists" | "db_unique"

@@ -26,7 +26,7 @@ class CreateJobUseCase:
             self.repo.save(job)
         except Exception as e:
             # repo에서 DuplicateKeyError 같은 명확한 예외로 올리게 만드는 게 베스트
-            raise ConflictError("job already exists for this input_uri") from e
+            raise ConflictError("job already exists for this input_uri", source="repo_exists") from e
 
         self.event_bus.publish(
             JobCreated(

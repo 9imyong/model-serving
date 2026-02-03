@@ -29,12 +29,12 @@ class CreateJobUseCase:
         # 1) 보조 멱등성 게이트 (InMemory/Redis 공통)
         reserved = await self.idem_gate.reserve(dto.input_uri, job_id)
         if not reserved:
-            raise ConflictError("job already exists for this input_uri")
+            raise ConflictError("job already exists for this input_uri", source="idem_gate")
         # 2) 저장
         job = Job.create(job_id, input_uri=dto.input_uri, model_name=dto.model_name)
         self.repo.save(job)
         # 3) 이벤트 발행
-        self.event_bus.publish(
+        await self.event_bus.publish(
             JobCreated(job_id=job_id, payload={"input_uri": dto.input_uri, "model_name": dto.model_name}),
         )
         return CreateJobResponse(job_id=job_id, status=job.status, created_at=job.created_at)

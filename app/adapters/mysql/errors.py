@@ -26,4 +26,4 @@ def raise_if_duplicate_input_uri(err: IntegrityError) -> None:
     is_duplicate = (code == 1062) or ("duplicate" in msg and "uq_jobs_input_uri" in msg) or ("duplicate entry" in msg)
 
     if is_duplicate:
-        raise ConflictError("job already exists for this input_uri") from err
+        raise ConflictError("job already exists for this input_uri", source="db_unique") from err

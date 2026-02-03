@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-ocr-batch
+  namespace: model-serving
+spec:
+  template:
+    spec:
+      containers:
+        - name: worker-ocr-batch
+          resources:
+            requests:
+              cpu: "1"
+              memory: 2Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi

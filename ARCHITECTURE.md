@@ -34,7 +34,8 @@
 
 **구성**  
 - API  
-- Kafka (OCR Job Topic)  
+- Kafka (OCR Job Topic)
+- REDIS
 - OCR Worker (GPU concurrency = 1)  
 - MySQL  
 
@@ -88,13 +89,97 @@
 - GPU가 명확한 병목 지점 환경  
 - 처리량 최적화가 중요한 서비스 단계  
 
+### C. arch-async-writer (Downstream 병목 분리형)
+
+**목표**  
+- GPU 추론 이후 단계(DB / IO / 내부 네트워크) 병목 격리  
+- GPU 처리 파이프라인 보호 및 불필요한 GPU 증설 방지  
+
+**설계 배경**  
+GPU 추론 자체는 병목이 아니지만,  
+추론 결과 저장(DB), 파일 IO, 내부 서비스 호출, 네트워크 지연 등  
+다운스트림 처리 단계에서 지연이 발생하는 경우가 있다.
+
+이 경우 GPU Util은 낮거나 안정적임에도 불구하고,
+- Kafka lag 지속 증가  
+- End-to-End latency 증가  
+- 처리 완료 지연  
+이 동시에 발생한다.
+
+**arch-async-writer는 이러한 다운스트림 병목을 GPU 처리 경로로부터 분리하는 것을 목표로 한다.**
+
+---
+
+**구성**  
+- API  
+- Kafka (OCR Job Topic)  
+- OCR Worker (GPU Inference 전담)  
+- Kafka (Result Topic)  
+- Writer Worker (DB / IO / Network 처리 전담)  
+- MySQL  
+
+---
+
+**핵심 설계**  
+- GPU Worker는 **추론만 수행**하고 결과를 `result-topic`에 이벤트로 발행  
+- Writer Worker는 결과 이벤트를 소비하여  
+  - DB 저장  
+  - 파일 업로드  
+  - 내부 RPC 호출  
+  을 전담 처리  
+- GPU ↔ Writer 사이에 Kafka를 완충 계층으로 두어  
+  다운스트림 지연이 GPU 처리 흐름으로 전파되지 않도록 설계  
+
+---
+
+**특징**  
+- GPU Util 안정화 (GPU 병목 오인 방지)  
+- Writer Worker 독립적 scale-out 가능  
+- DB / Network 장애 시 GPU 추론 지속 가능  
+- 재시도 / DLQ 기반 장애 복구 용이  
+
+---
+
+**트레이드오프**  
+- 파이프라인 단계 증가로 운영 복잡도 상승  
+- 데이터 정합성(멱등성, 중복 처리) 설계 필요  
+- 토픽 및 컨슈머 관리 비용 증가  
+
+---
+
+**사용 시점**  
+- GPU Util < 60% 상태에서 Kafka lag 지속 증가  
+- Trace 상 DB / Network span 비중이 가장 큰 경우  
+- GPU 증설이나 배치 처리로도 지연 해소가 되지 않는 경우  
+- 다운스트림 안정성이 SLA에 중요한 서비스 단계  
+
+---
+
 ## 4. 아키텍처 전환 기준
 
-| 상황                             | 판단 기준(예시 지표)                     | 전환 전략                            |
-|---------------------------------|----------------------------------------|-----------------------------------|
-| **비동기 처리 필요**                 | API p95 latency 증가, 동기 처리로 인한 타임아웃 | **arch-async-standard 도입**       |
-| **GPU Util 낮음, Kafka lag 회복 지연** | GPU Util < 50%, lag 감소 속도 느림          | **arch-async-standard → arch-async-batched** |
-| **SLA / 장애 대응 요구 증가**         | 무중단 배포, 장애 허용치 감소                | **arch-async-batched + HA 운영 정책 적용** |
+아키텍처는 고정된 형태가 아니라,  
+**관측 지표 기반으로 단계적으로 전환 가능하도록 설계**한다.
 
-> ※ HA(PDB, Anti-Affinity, 알림 강화)는 운영 정책으로 단계적으로 적용하며,  
-> 아키텍처 타입 자체를 변경하지 않습니다.  
+| 상황 | 판단 기준(예시 지표) | 전환 전략 |
+|-----|------------------|---------|
+| **비동기 처리 필요** | API p95 latency 증가, 동기 처리 타임아웃 | **arch-async-standard 도입** |
+| **GPU 병목 발생** | GPU Util ≥ 80%, Kafka lag 지속 증가 | **arch-async-standard → arch-async-batched** |
+| **GPU Util 낮음 + Lag 증가** | GPU Util < 60%, DB/Network latency p95 증가 | **arch-async-batched → arch-async-writer** |
+| **가용성 요구 증가** | 무중단 배포 필요, 장애 허용치 감소 | **PDB / Anti-Affinity / HPA 적용** |
+
+> ※ HA(PDB, Anti-Affinity, HPA, 알림 강화)는  
+> 아키텍처 유형 변경이 아닌 **운영 정책으로 단계적 적용**한다.
+
+---
+
+## 5. 설계 요약
+
+본 플랫폼은 입력 폭주, GPU 처리 병목, 다운스트림 병목을 구분하여  
+각 상황에 적합한 아키텍처를 선택적으로 적용한다.
+
+- **arch-async-standard**: 입력 변동성 흡수 및 기본 안정성 확보  
+- **arch-async-batched**: GPU 처리량 극대화  
+- **arch-async-writer**: 다운스트림 병목 격리 및 운영 안정성 강화  
+
+이를 통해 단일 해법이 아닌,  
+**병목 위치 기반의 점진적 확장과 장애 대응이 가능한 구조**를 제공한다.

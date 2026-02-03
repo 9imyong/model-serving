@@ -1,28 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api
+  name: worker-ocr-batch
   namespace: model-serving
   labels:
-    app: api
+    app: worker-ocr-batch
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: api
+      app: worker-ocr-batch
   template:
     metadata:
       labels:
-        app: api
+        app: worker-ocr-batch
     spec:
       containers:
-        - name: api
-          image: model-serving-api:latest
-          ports:
-            - containerPort: 8000
+        - name: worker-ocr-batch
+          image: model-serving-worker-ocr:latest
           envFrom:
             - configMapRef:
-                name: model-serving-config
+                name: worker-ocr-batch-config
             - secretRef:
                 name: model-serving-secret
                 optional: true

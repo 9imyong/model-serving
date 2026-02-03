@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-ocr-batch
+  namespace: model-serving
+spec:
+  template:
+    spec:
+      containers:
+        - name: worker-ocr-batch
+          env:
+            - name: BATCH_SIZE
+              value: "8"

@@ -1,0 +1,10 @@
+# Requires Prometheus Operator CRD
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: slo-rules
+  namespace: model-serving
+spec:
+  groups:
+    - name: slo
+      rules: []

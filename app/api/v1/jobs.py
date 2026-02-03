@@ -2,9 +2,9 @@
 from fastapi import APIRouter
 
 from app.api.v1.models import CreateJobRequest, CreateJobResponse, GetJobResponse
-from app.application.usecases.create_job import CreateJobUseCase
-from app.application.usecases.get_job import GetJobUseCase
-from app.application.dtos import CreateJobDTO
+from app.application.commands.create_job import CreateJobUseCase
+from app.application.queries.get_job import GetJobUseCase
+from app.application.dto import CreateJobDTO
 from app.adapters.inmemory.job_repository import InMemoryJobRepository
 
 router = APIRouter()

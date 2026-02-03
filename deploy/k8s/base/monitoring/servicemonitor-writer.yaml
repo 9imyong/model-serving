@@ -1,0 +1,11 @@
+# Requires Prometheus Operator CRD
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: writer
+  namespace: model-serving
+spec:
+  selector:
+    matchLabels:
+      app: writer
+  endpoints: []

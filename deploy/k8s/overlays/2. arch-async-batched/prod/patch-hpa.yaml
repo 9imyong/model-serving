@@ -1,0 +1,8 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: worker-ocr-batch
+  namespace: model-serving
+spec:
+  minReplicas: 1
+  maxReplicas: 5

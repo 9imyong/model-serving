@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from app.domain.errors import JobNotFound
-from app.ports.job_repository import JobRecord, JobRepository
+from app.ports.repositories import JobRecord, JobRepository
 
 
 class InMemoryJobRepository(JobRepository):

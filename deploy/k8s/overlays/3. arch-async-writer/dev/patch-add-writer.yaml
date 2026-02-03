@@ -1,0 +1,2 @@
+# Writer is included via base/writer in kustomization
+# Optional: patch writer env/config here

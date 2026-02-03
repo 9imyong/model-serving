@@ -1,28 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api
+  name: writer
   namespace: model-serving
   labels:
-    app: api
+    app: writer
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: api
+      app: writer
   template:
     metadata:
       labels:
-        app: api
+        app: writer
     spec:
       containers:
-        - name: api
-          image: model-serving-api:latest
-          ports:
-            - containerPort: 8000
+        - name: writer
+          image: model-serving-writer:latest
           envFrom:
             - configMapRef:
-                name: model-serving-config
+                name: writer-config
             - secretRef:
                 name: model-serving-secret
                 optional: true

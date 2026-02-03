@@ -2,7 +2,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.api.errors.error_mapper import map_exception
+from app.api.middleware.error_mapper import map_exception
 
 
 def register_exception_handlers(app: FastAPI) -> None:

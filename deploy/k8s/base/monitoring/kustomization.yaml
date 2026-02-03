@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Uncomment when Prometheus Operator is installed
+# resources:
+#   - servicemonitor-api.yaml
+#   - servicemonitor-worker.yaml
+#   - servicemonitor-writer.yaml
+#   - promrule-slo.yaml

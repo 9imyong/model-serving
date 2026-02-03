@@ -1,0 +1,8 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: writer
+  namespace: model-serving
+spec:
+  minReplicas: 2
+  maxReplicas: 10

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: writer
+  namespace: model-serving
+spec:
+  selector:
+    app: writer
+  ports: []

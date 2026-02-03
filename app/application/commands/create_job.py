@@ -3,29 +3,32 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.application.dto import CreateJobDTO
+from app.application.dto import CreateJobDTO, CreateJobResponse
 from app.application.errors import ConflictError
+from app.core.id_generator import generate_job_id
+from app.domain.events import JobCreated
+from app.domain.job import Job
+from app.ports.event_bus import EventBus
 from app.ports.repositories import JobRepository
 
 
 @dataclass(slots=True)
 class CreateJobUseCase:
-    """
-    Usecase = 시스템의 행동 단위
-    - HTTP 모름
-    - ORM 모름
-    - 외부 의존성은 Port로 주입
-    """
     repo: JobRepository
+    event_bus: EventBus
 
-    def execute(self, dto: CreateJobDTO) -> str:
-        """
-        최소 구현:
-        - 동일 input_uri 중복 생성 방지 예시
-        - job_id 반환 (지금 단계에서는 도메인 Job을 아직 만들기 전이라 id만 반환)
-        """
-        if self.repo.exists_by_input_uri(dto.input_uri):
+    def execute(self, dto: CreateJobDTO) -> CreateJobResponse:
+        if dto.input_uri and self.repo.exists_by_input_uri(dto.input_uri):
             raise ConflictError("job already exists for this input_uri")
 
-        job_id = self.repo.create(dto.input_uri)
-        return job_id
+        job_id = generate_job_id()
+        job = Job.create(job_id, input_uri=dto.input_uri, model_name=dto.model_name)
+        self.repo.save(job)
+        self.event_bus.publish(
+            JobCreated(job_id=job_id, payload={"input_uri": dto.input_uri, "model_name": dto.model_name}),
+        )
+        return CreateJobResponse(
+            job_id=job_id,
+            status=job.status,
+            created_at=job.created_at,
+        )

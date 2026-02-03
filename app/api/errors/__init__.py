@@ -1,4 +1,6 @@
 # app/api/errors/__init__.py
+from __future__ import annotations
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
@@ -10,6 +12,6 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def global_exception_handler(request: Request, exc: Exception):
         http_exc = await map_exception(exc)
         return JSONResponse(
-            status_code= http_exc.status_code,
+            status_code=http_exc.status_code,
             content=http_exc.detail,
         )

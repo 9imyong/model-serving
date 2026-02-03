@@ -33,20 +33,20 @@ class InMemoryJobRepository(JobRepository):
         self._results: dict[str, Any] = {}
         self._input_uris: set[str] = set()
 
-    def save(self, job: Job) -> None:
+    async def save(self, job: Job) -> None:
         is_new = job.id not in self._jobs
         self._jobs[job.id] = _job_to_store(job)
         if is_new and job.input_uri:
             self._input_uris.add(job.input_uri)
 
-    def get(self, job_id: str) -> Job:
+    async def get(self, job_id: str) -> Job:
         data = self._jobs.get(job_id)
         if data is None:
             raise JobNotFound()
         return _store_to_job(data)
 
-    def exists_by_input_uri(self, input_uri: str) -> bool:
+    async def exists_by_input_uri(self, input_uri: str) -> bool:
         return input_uri in self._input_uris
 
-    def save_result(self, job_id: str, result: Any) -> None:
+    async def save_result(self, job_id: str, result: Any) -> None:
         self._results[job_id] = result

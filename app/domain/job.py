@@ -31,13 +31,36 @@ class Job:
     created_at: datetime | None = None
 
     @staticmethod
-    def create(job_id: str, *, input_uri: str = "", model_name: str = "default") -> Job:
+    def create(
+        job_id: str,
+        *,
+        input_uri: str | None = "",
+        model_name: str = "default",
+    ) -> Job:
         return Job(
             id=job_id,
             status=JobStatus.PENDING,
-            input_uri=input_uri,
+            input_uri=input_uri or "",
             model_name=model_name,
             created_at=datetime.now(timezone.utc),
+        )
+
+    @staticmethod
+    def restore(
+        job_id: str,
+        *,
+        input_uri: str = "",
+        model_name: str = "default",
+        status: str | JobStatus = JobStatus.PENDING,
+        created_at: datetime | None = None,
+    ) -> Job:
+        """DB/저장소에서 읽은 값으로 Job 복원."""
+        return Job(
+            id=job_id,
+            status=JobStatus(status) if isinstance(status, str) else status,
+            input_uri=input_uri or "",
+            model_name=model_name,
+            created_at=created_at,
         )
 
     def mark_running(self) -> None:

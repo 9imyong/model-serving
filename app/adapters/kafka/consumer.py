@@ -77,4 +77,43 @@ class KafkaConsumerRunner:
         # aiokafka ConsumerRecord는 msg.value가 bytes
         value_bytes = getattr(msg, "value", None)
         topic = getattr(msg, "topic", None)
-        partition = getattr(m
+        partition = getattr(msg, "partition", None)
+        offset = getattr(msg, "offset", None)
+
+        if not isinstance(value_bytes, (bytes, bytearray)):
+            logger.warning("kafka_message_invalid", extra={"topic": topic, "partition": partition, "offset": offset})
+            # invalid message도 commit해서 막히지 않게(정책)
+            await consumer.commit()  # type: ignore[attr-defined]
+            return
+
+        try:
+            payload = json.loads(value_bytes.decode("utf-8"))
+        except Exception:
+            logger.exception("kafka_message_decode_failed", extra={"topic": topic, "partition": partition, "offset": offset})
+            # decode 실패도 commit할지/재시도할지 정책. 여기선 commit.
+            await consumer.commit()  # type: ignore[attr-defined]
+            return
+
+        last_err: Exception | None = None
+        for attempt in range(1, self.max_retries + 1):
+            try:
+                await self.handler(payload)
+                # ✅ 성공 시 commit
+                await consumer.commit()  # type: ignore[attr-defined]
+                return
+            except Exception as e:
+                last_err = e
+                logger.exception(
+                    "kafka_message_process_failed",
+                    extra={"attempt": attempt, "topic": topic, "partition": partition, "offset": offset},
+                )
+                await asyncio.sleep(self.retry_backoff_sec * attempt)
+
+        # 여기까지 오면 재시도 실패
+        # TODO: DLQ로 보내기(별도 producer 필요) 또는 알람/메트릭
+        logger.error(
+            "kafka_message_process_giveup",
+            extra={"topic": topic, "partition": partition, "offset": offset, "error": repr(last_err)},
+        )
+        # “막히지 않게” 일단 commit (운영 정책에 따라 다름)
+        await consumer.commit()  # type: ignore[attr-defined]

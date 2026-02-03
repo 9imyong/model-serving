@@ -1,14 +1,15 @@
-# app/adapters/mysql/session.py
+# app/adapters/mysql/__init__.py (session wiring)
 from __future__ import annotations
+
+import os
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.settings import settings  # DB_DSN 여기서 가져온다고 가정 mysql+aiomysql://app:app@mysql:3306/app
-
+DB_DSN = os.getenv("DATABASE_URL", "mysql+aiomysql://user:pass@localhost:3306/model_serving").strip()
 
 engine: AsyncEngine = create_async_engine(
-    settings.DB_DSN,
+    DB_DSN,
     pool_pre_ping=True,
     pool_size=5,
     max_overflow=10,

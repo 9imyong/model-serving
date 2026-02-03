@@ -9,8 +9,9 @@ OCR 기반 모델 서빙 플랫폼.
 > **Usecase 중심 · Light DDD · Ports/Adapters · Kubernetes 대응 구조**
 
 본 프로젝트는 OCR 모델 서빙을 위한 **실서비스 전제 플랫폼 스켈레톤**이다.
-API, Worker, Domain 로직을 명확히 분리하고 장애 예측·대응·복구가 가능한 구조를 목표로 설계되었다.
-
+API, Worker, Domain 로직을 명확히 분리하고 장애 예측·대응·복구가 가능한 구조를 목표로 설계하였으며
+입력 폭주, GPU 처리 병목, 다운스트림(DB/IO/Network) 병목을 구분하여  
+각 상황에 적합한 아키텍처를 단계적으로 적용할 수 있도록 구성되었습니다.
 ---
 
 ## 핵심 목표
@@ -104,8 +105,9 @@ Kubernetes 환경에서 다음 3가지 아키텍처를 제공한다.
 
 | 시나리오                    | 설명                       |
 | ----------------------- | ------------------------ |
-| **arch-async-standard** | Kafka 기반 단건 처리 비동기 구조    |
-| **arch-async-batched**  | GPU 마이크로배치 기반 처리량 최적화 구조 |
+| **arch-async-standard** | 기본 EDA 기반 비동기 처리 구조 |
+| **arch-async-batched** | GPU Micro-Batch 기반 처리량 최적화 |
+| **arch-async-writer** | Downstream 병목 분리를 위한 Writer Consumer 분리 구조 |
 
 자세한 내용은 `ARCHITECTURE.md` 참고.
 

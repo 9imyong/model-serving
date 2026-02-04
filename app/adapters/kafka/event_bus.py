@@ -26,7 +26,6 @@ class KafkaEventBus(EventBus):
     client_id: str = "model-serving"
     acks: str = "all"
     linger_ms: int = 5
-    retries: int = 5
 
     _producer: Optional[object] = field(default=None, init=False)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False)
@@ -46,8 +45,6 @@ class KafkaEventBus(EventBus):
                 client_id=self.client_id,
                 acks=self.acks,
                 linger_ms=self.linger_ms,
-                retries=self.retries,
-                # enable_idempotence=True  # aiokafka 버전에 따라 지원 여부 다름(지원되면 켜는 걸 추천)
             )
             await producer.start()
             self._producer = producer

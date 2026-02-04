@@ -18,19 +18,39 @@ from app.adapters.kafka.event_bus import KafkaEventBus
 def _env(key: str, default: str = "") -> str:
     return os.getenv(key, default).strip()
 
+
+def _repo_backend() -> str:
+    """REPO_BACKEND. BACKEND=infra 이면 mysql 사용."""
+    if _env("BACKEND", "").lower() == "infra":
+        return "mysql"
+    return _env("REPO_BACKEND", "inmemory")
+
+
+def _event_bus_backend() -> str:
+    """EVENT_BUS. BACKEND=infra 이면 kafka 사용."""
+    if _env("BACKEND", "").lower() == "infra":
+        return "kafka"
+    return _env("EVENT_BUS", "inmemory")
+
+
+def _idem_backend() -> str:
+    """IDEM_BACKEND. BACKEND=infra 이면 redis 사용."""
+    if _env("BACKEND", "").lower() == "infra":
+        return "redis"
+    return _env("IDEM_BACKEND", "inmemory")
+
+
 @lru_cache
 def get_repo():
-    backend = _env("REPO_BACKEND", "inmemory")
+    backend = _repo_backend()
     if backend == "mysql":
-        # 너 mysql adapter에 맞춰 생성자/팩토리만 맞추면 됨
-        # 예: MySQLJobRepository.from_env()
         return MySQLJobRepository.from_env()
     return InMemoryJobRepository()
 
 
 @lru_cache
 def get_event_bus():
-    backend = _env("EVENT_BUS", "inmemory")
+    backend = _event_bus_backend()
     if backend == "kafka":
         return KafkaEventBus(bootstrap_servers=_env("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092"))
     return InMemoryEventBus()
@@ -38,9 +58,8 @@ def get_event_bus():
 
 @lru_cache
 def get_idem_gate():
-    backend = _env("IDEM_BACKEND", "inmemory")
+    backend = _idem_backend()
     if backend == "redis":
-        # 예: RedisIdempotencyGate.from_env() 형태로 맞추는 게 베스트
         return RedisIdempotencyGate.from_env()
     return InMemoryIdemGate()
 

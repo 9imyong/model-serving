@@ -1,4 +1,14 @@
 # app/main.py
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# 프로젝트 루트의 .env 로드 (uv run 시 cwd 기준)
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+
+from app.core.logging import configure_logging
+configure_logging()
+
 from fastapi import FastAPI
 
 from app.api.errors import register_exception_handlers

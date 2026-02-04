@@ -19,7 +19,11 @@ class RedisIdempotencyGate:
 
     @classmethod
     def from_env(cls, *, ttl_sec: int | None = None) -> RedisIdempotencyGate:
-        url = os.getenv("REDIS_URL", "redis://localhost:6379/0").strip()
+        url = os.getenv("REDIS_URL", "").strip()
+        if not url:
+            host = os.getenv("REDIS_HOST", "localhost")
+            port = os.getenv("REDIS_PORT", "6379")
+            url = f"redis://{host}:{port}/0"
         redis = Redis.from_url(url, decode_responses=True)
         return cls(redis=redis, ttl_sec=ttl_sec or 3600)
 

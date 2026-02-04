@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from urllib.parse import quote_plus
 from typing import Any
 
 from sqlalchemy import select
@@ -16,10 +17,16 @@ from app.ports.repositories import JobRepository
 
 
 def _default_database_url() -> str:
-    return os.getenv(
-        "DATABASE_URL",
-        "mysql+aiomysql://user:pass@localhost:3306/model_serving",
-    ).strip()
+    url = os.getenv("DATABASE_URL", "").strip()
+    if url:
+        return url
+    host = os.getenv("MYSQL_HOST", "localhost")
+    port = os.getenv("MYSQL_PORT", "3306")
+    database = os.getenv("MYSQL_DATABASE", "model_serving")
+    user = os.getenv("MYSQL_USER", "root")
+    password = os.getenv("MYSQL_PASSWORD", "")
+    password_part = f":{quote_plus(password)}" if password else ""
+    return f"mysql+aiomysql://{user}{password_part}@{host}:{port}/{database}"
 
 
 class MySQLJobRepository(JobRepository):
@@ -37,11 +44,12 @@ class MySQLJobRepository(JobRepository):
 
     async def save(self, job: Job) -> None:
         async with self._session_factory() as session:
+            status_val = getattr(job.status, "value", str(job.status))
             row = JobModel(
                 job_id=job.id,
                 input_uri=job.input_uri,
                 model_name=job.model_name,
-                status=str(job.status),
+                status=status_val,
             )
             session.add(row)
             try:

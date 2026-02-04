@@ -1,11 +1,16 @@
 # app/api/middleware/error_mapper.py
 from __future__ import annotations
 
+import logging
+import os
+
 from fastapi import HTTPException
 
 from app.api.errors.http_exceptions import ApiError
 from app.application.errors import ConflictError, UseCaseError
 from app.domain.errors import DomainError, InvalidStateError, NotFoundError
+
+logger = logging.getLogger(__name__)
 
 
 def _unwrap_exception_group(exc: Exception) -> Exception:
@@ -67,9 +72,14 @@ async def map_exception(exc: Exception) -> HTTPException:
             message=str(exc),
         )
 
-    # ---- Fallback ----
+    # ---- Fallback (500) ----
+    # 로그에 전체 traceback 남김
+    logger.exception("Unhandled exception: %s", exc)
+    # 응답 메시지: 개발 시 원인 확인용 (EXPOSE_SERVER_ERROR=1 또는 미설정 시 실제 메시지)
+    expose = os.getenv("EXPOSE_SERVER_ERROR", "1").strip().lower() in ("1", "true", "yes")
+    message = str(exc) if expose else "Unexpected server error"
     return ApiError(
         status_code=500,
         code="INTERNAL_SERVER_ERROR",
-        message="Unexpected server error",
+        message=message,
     )

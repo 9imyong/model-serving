@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     created_at DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 
     PRIMARY KEY (job_id),
-    UNIQUE KEY uq_jobs_input_uri (input_uri),
+    UNIQUE KEY uq_jobs_input_uri (input_uri(768)),
     KEY ix_jobs_status_created_at (status, created_at)
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4

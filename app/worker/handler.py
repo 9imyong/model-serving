@@ -33,7 +33,7 @@ class JobCreatedHandler:
 
         # 1) 멱등 처리 (job 상태 기반)
         try:
-            job = await self.repo.get_by_id(job_id)
+            job = await self.repo.get(job_id)
         except NotFoundError:
             # 아직 저장 전 이벤트가 왔거나(레이스), 데이터 유실 등
             # 정책: 재시도 유도하려면 예외를 던져야 함.

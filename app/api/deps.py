@@ -12,7 +12,7 @@ from app.adapters.inmemory.event_bus import InMemoryEventBus
 from app.adapters.inmemory.idem_gate import InMemoryIdemGate
 
 from app.adapters.mysql.repository import MySQLJobRepository
-from app.adapters.idempotency.redis_gate import RedisIdempotencyGate
+from app.adapters.redis.idem_gate import RedisIdempotencyGate
 from app.adapters.kafka.event_bus import KafkaEventBus
 
 def _env(key: str, default: str = "") -> str:

@@ -16,10 +16,19 @@ dependencies = [
   "SQLAlchemy>=2.0",
   "aiomysql>=0.2.0",
   "greenlet>=3.0",
+  "python-dotenv>=1.0",
+  "redis>=5.0",
+  "kafka-python>=2.0",
+  "aiokafka>=0.10.0",
+  "pydantic>=2.0",
+  "pydantic-settings>=2.0",
+  "pydantic-core>=2.0",
+  "pydantic-settings>=2.0",
+
 ]
 
 [dependency-groups]
-dev = ["pytest", "ruff"]
+dev = ["pytest", "pytest-asyncio", "httpx", "ruff"]
 
 [tool.ruff]
 line-length = 100
@@ -28,6 +37,8 @@ target-version = "py311"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["app"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [project.optional-dependencies]
 dev = [

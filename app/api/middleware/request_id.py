@@ -1,5 +1,4 @@
-# """Request ID middleware."""
-# app/api/middleware/request_id.py
+"""Request ID middleware."""
 from __future__ import annotations
 
 import contextvars

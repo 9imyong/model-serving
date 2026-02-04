@@ -32,7 +32,7 @@ class CreateJobUseCase:
             raise ConflictError("job already exists for this input_uri", source="idem_gate")
         # 2) 저장
         job = Job.create(job_id, input_uri=dto.input_uri, model_name=dto.model_name)
-        self.repo.save(job)
+        await self.repo.save(job)
         # 3) 이벤트 발행
         await self.event_bus.publish(
             JobCreated(job_id=job_id, payload={"input_uri": dto.input_uri, "model_name": dto.model_name}),

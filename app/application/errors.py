@@ -1,6 +1,8 @@
 # app/application/errors.py
 from __future__ import annotations
 
+from app.domain.errors import NotFoundError  # re-export for app/adapters, worker
+
 
 class UseCaseError(Exception):
     """

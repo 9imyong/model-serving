@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from dataclasses import dataclass
 from redis.asyncio import Redis
 
@@ -10,10 +11,17 @@ def _idem_key(input_uri: str) -> str:
     h = hashlib.sha256(input_uri.encode("utf-8")).hexdigest()[:24]
     return f"idem:job:input_uri:{h}"
 
+
 @dataclass(slots=True)
 class RedisIdempotencyGate:
     redis: Redis
     ttl_sec: int = 3600
+
+    @classmethod
+    def from_env(cls, *, ttl_sec: int | None = None) -> RedisIdempotencyGate:
+        url = os.getenv("REDIS_URL", "redis://localhost:6379/0").strip()
+        redis = Redis.from_url(url, decode_responses=True)
+        return cls(redis=redis, ttl_sec=ttl_sec or 3600)
 
     async def reserve(self, input_uri: str, job_id: str) -> bool:
         key = _idem_key(input_uri)
@@ -22,4 +30,4 @@ class RedisIdempotencyGate:
     async def get(self, input_uri: str) -> str | None:
         key = _idem_key(input_uri)
         val = await self.redis.get(key)
-        return val.decode() if val else None
+        return val if val else None

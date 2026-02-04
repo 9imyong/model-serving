@@ -11,8 +11,8 @@ from app.ports.repositories import JobRepository
 class GetJobStatusUseCase:
     repo: JobRepository
 
-    def execute(self, job_id: str) -> JobStatusResponse:
-        job = self.repo.get(job_id)
+    async def execute(self, job_id: str) -> JobStatusResponse:
+        job = await self.repo.get(job_id)
         return JobStatusResponse(
             job_id=job.id,
             status=job.status,
